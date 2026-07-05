@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+<header class="header">
+  <div class="header-top">
+    <div class="logo-container" onclick="showView('home')">
+      <i data-lucide="store" class="logo-icon"></i>
+      <span class="logo-text">LocalMarket</span>
+    </div>
+    <div class="header-right">
+      <span class="loc-badge" id="loc-badge" onclick="getLocation()">
+        <i data-lucide="map-pin"></i>
+        <span id="loc-text">Get Location</span>
+      </span>
+      <span id="notif-bell" onclick="showNotifications()" class="notif-bell">
+        <i data-lucide="bell"></i>
+        <span id="notif-badge" class="notif-badge">0</span>
+      </span>
+      <button class="btn-login" id="login-btn" onclick="showView('account')">Login</button>
+    </div>
+  </div>
+  <div class="cat-scroll" id="cat-scroll"></div>
+  <div class="cat-dropdown" id="cat-dropdown" style="display:none"></div>
+</header>
+
+<main>
+<!-- HOME -->
+<section id="view-home" class="view active">
+  <div class="container">
+    <div id="home-results"><p class="hint">Enable location to see nearby listings</p></div>
+  </div>
+</section>
+
+<!-- SEARCH -->
+<section id="view-search" class="view">
+  <div class="container">
+    <div class="view-header"><button class="back-btn" onclick="showView('home')">←</button><h2>🔍 Search</h2></div>
+    <div class="search-box">
+      <input type="text" id="s-keyword" placeholder="Search keyword...">
+      <div class="search-filters" style="margin-bottom:16px">
+        <div style="flex:1;min-width:120px">
+          <select id="s-type" onchange="onSearchTypeChange()" style="width:100%">
+            <option value="">All Types</option>
+            <option value="services">Services</option>
+            <option value="shops">Commercial (Shops)</option>
+            <option value="properties">Properties</option>
+            <option value="product-shops">Shops & Utilities</option>
+            <option value="used-saman">Used Saman</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:120px">
+          <select id="s-category" style="display:none;width:100%"><option value="">All Categories</option></select>
+        </div>
+        <div style="flex:1;min-width:100px">
+          <label style="font-size:.8rem;color:#555;display:block;margin-bottom:2px">Price From</label>
+          <input type="number" id="s-price-from" placeholder="0" step="any" style="width:100%">
+        </div>
+        <div style="flex:1;min-width:100px">
+          <label style="font-size:.8rem;color:#555;display:block;margin-bottom:2px">Price To</label>
+          <input type="number" id="s-price-to" placeholder="Any" step="any" style="width:100%">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="doSearch()">🔍 Search</button>
+    </div>
+    <div id="s-results"></div>
+  </div>
+</section>
+
+<!-- ADD - Choose type -->
+<section id="view-add" class="view">
+  <div class="container">
+    <p class="subtitle" style="margin-bottom:14px;text-align:center;font-size:1rem">What would you like to post?</p>
+    <div class="add-grid">
+      <div class="add-card" onclick="showView('add-service')">👷<br>Post a Service</div>
+      <div class="add-card" onclick="showView('add-product-shop')">🏪<br>Add Shop /<br>Utility Point</div>
+      <div class="add-card" onclick="showView('add-shop');setTimeout(()=>{const s=$('shop-type');if(s){s.value='rent';}$('shop-price-label').textContent='Monthly Rent (PKR)*';},100)">🏢<br>Commercial<br><span style="font-size:.75rem;color:#1a73e8">For Rent</span></div>
+      <div class="add-card" onclick="showView('add-shop');setTimeout(()=>{const s=$('shop-type');if(s){s.value='sale';}$('shop-price-label').textContent='Sale Price (PKR)*';},100)">🏢<br>Commercial<br><span style="font-size:.75rem;color:#1a73e8">For Sale</span></div>
+      <div class="add-card" onclick="showView('add-property');setTimeout(()=>{const s=$('prop-listing-type');if(s){s.value='rent';}$('prop-price-label').textContent='Monthly Rent (PKR)*';},100)">🏠<br>Property<br><span style="font-size:.75rem;color:#1a73e8">For Rent</span></div>
+      <div class="add-card" onclick="showView('add-property');setTimeout(()=>{const s=$('prop-listing-type');if(s){s.value='sale';}$('prop-price-label').textContent='Sale Price (PKR)*';},100)">🏠<br>Property<br><span style="font-size:.75rem;color:#1a73e8">For Sale</span></div>
+      <div class="add-card" onclick="showView('add-used-saman')">📦<br>Sell Used<br>Items</div>
+    </div>
+  </div>
+</section>
+
+<!-- MY ADS -->
+<section id="view-my" class="view">
+  <div class="container">
+    <h2 class="view-title">📋 My Ads</h2>
+    <div class="tab-bar" id="my-tabs">
+      <button class="tab-btn active" data-type="services">Services</button>
+      <button class="tab-btn" data-type="shops">Commercial</button>
+      <button class="tab-btn" data-type="properties">Properties</button>
+      <button class="tab-btn" data-type="product_shops">Shops & Utilities</button>
+      <button class="tab-btn" data-type="used_saman">Used</button>
+    </div>
+    <div id="my-list"></div>
+  </div>
+</section>
+
+<!-- FAVORITES -->
+<section id="view-favorites" class="view">
+  <div class="container">
+    <div class="view-header"><button class="back-btn" onclick="showView('account')">←</button><h2>❤️ My Favorites</h2></div>
+    <div id="fav-list"></div>
+  </div>
+</section>
+
+<!-- ACCOUNT -->
+<section id="view-account" class="view">
+  <div class="container">
+    <h2 class="view-title">👤 Account</h2>
+    <div id="account-logged-in" style="display:none">
+      <div class="account-card">
+        <div id="account-info"></div>
+        <button class="btn btn-sm" onclick="logout()" style="margin-top:10px;background:#ea4335;color:#fff;font-size:1rem;padding:14px 24px;width:100%;border:none;border-radius:12px;cursor:pointer;font-weight:600;transition:background .15s">🚪 Logout</button>
+      </div>
+      <div class="account-links">
+        <a href="#" onclick="showView('plans')">💎 Plans & Pricing</a>
+        <a href="#" onclick="showView('favorites')">❤️ My Favorites</a>
+        <a href="#" onclick="showView('admin')" id="ac-admin-link" style="display:none">⚙️ Admin Panel</a>
+      </div>
+    </div>
+    <div id="account-logged-out">
+      <div class="account-card">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="btn btn-primary" id="ac-tab-login" onclick="showAccountForm('login')" style="flex:1;font-size:1rem;padding:14px">Login</button>
+          <button class="btn" id="ac-tab-register" onclick="showAccountForm('register')" style="flex:1;font-size:1rem;padding:14px;background:#e8eaed;color:#333;font-weight:600">Register</button>
+        </div>
+        <div id="ac-form">
+          <input type="text" id="ac-name" placeholder="Full Name" style="display:none;width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:1rem;margin-bottom:10px">
+          <input type="email" id="ac-email" placeholder="Email" style="width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:1rem;margin-bottom:10px">
+          <input type="tel" id="ac-phone" placeholder="Phone (optional)" style="display:none;width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:1rem;margin-bottom:10px">
+          <input type="password" id="ac-password" placeholder="Password" style="width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:1rem;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;color:var(--text-secondary);font-size:0.85rem">
+            <input type="checkbox" onchange="document.getElementById('ac-password').type = this.checked ? 'text' : 'password'" style="width:auto;margin:0;cursor:pointer" id="ac-show-pass">
+            <label for="ac-show-pass" style="cursor:pointer;user-select:none;margin:0;font-weight:normal;color:inherit">Show Password</label>
+          </div>
+          <button class="btn btn-primary btn-block" onclick="doLogin()" style="padding:16px;font-size:1.05rem">Login</button>
+        </div>
+        <div id="ac-error" style="color:#c5221f;font-size:.85rem;margin-top:8px;display:none"></div>
+      </div>
+      <div style="font-size:.8rem;color:#888;text-align:center;margin-top:8px">
+        <a href="#" onclick="showView('plans')" style="color:#1a73e8">💎 Plans & Pricing</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLANS -->
+<section id="view-plans" class="view">
+  <div class="container">
+    <div class="view-header"><button class="back-btn" onclick="showView('account')">←</button><h2>💎 Plans & Pricing</h2></div>
+    <div id="active-plan-info" style="margin-bottom:14px"></div>
+    <div id="plans-list"></div>
+  </div>
+</section>
+
+<!-- PAYMENT FORM (hidden) -->
+<div id="payment-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;" onclick="closePayment(event)">
+  <div style="background:#fff;border-radius:14px;padding:20px;width:92%;max-width:400px;margin:20px auto;box-shadow:0 8px 30px rgba(0,0,0,.2)" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0;font-size:1.1rem">💳 JazzCash Payment</h3>
+      <button onclick="closePayment()" style="background:none;border:none;font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+    <div id="jc-details" style="background:#f5f5f5;padding:12px;border-radius:8px;margin-bottom:14px;font-size:.9rem">
+      <p style="margin:0 0 6px;font-weight:600">📍 Send payment to:</p>
+      <p id="jc-account" style="margin:0 0 4px;font-size:1.1rem;font-weight:700;color:#1a73e8">03XX-XXXXXXX</p>
+      <p id="jc-name" style="margin:0;color:#666">JazzCash Account</p>
+      <p id="jc-amount" style="margin:6px 0 0;font-size:.9rem;color:#333"></p>
+    </div>
+    <p style="font-size:.8rem;color:#666;margin-bottom:10px">After sending payment, enter the Transaction ID below:</p>
+    <input id="pay-txn" placeholder="Transaction ID *" required style="display:block;width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:.9rem;margin-bottom:8px;box-sizing:border-box">
+    <input id="pay-number" placeholder="Your JazzCash Number (03XX-XXXXXXX)" style="display:block;width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:.9rem;margin-bottom:14px;box-sizing:border-box">
+    <button class="btn btn-primary btn-block" onclick="submitPayment()" id="pay-submit" style="padding:12px">Verify & Activate</button>
+    <p id="pay-msg" class="form-msg" style="margin-top:8px;display:none"></p>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<section id="view-notifications" class="view">
+  <div class="container">
+    <div class="view-header"><button class="back-btn" onclick="showView('home')">←</button><div style="display:flex;justify-content:space-between;align-items:center;flex:1"><h2 style="margin:0">🔔 Notifications</h2>
+      <button class="btn btn-sm" onclick="markAllNotifRead()">Mark all read</button></div></div>
+    <div id="notif-list"></div>
+  </div>
+</section>
+
+<!-- ADMIN -->
+<section id="view-admin" class="view">
+  <div class="container">
+    <div class="view-header"><button class="back-btn" onclick="showView('account')">←</button><h2>⚙️ Admin Panel</h2></div>
+    <div class="tab-bar" id="admin-main-tabs">
+      <button class="tab-btn" data-section="dashboard">📊 Dashboard</button>
+      <button class="tab-btn" data-section="listing">📋 Listing</button>
+      <button class="tab-btn" data-section="users">👥 Users</button>
+      <button class="tab-btn" data-section="settings">⚙️ Setting</button>
+      <button class="tab-btn" data-section="payment">💳 Payment</button>
+    </div>
+
+    <!-- Listing Section -->
+    <div id="admin-listing" style="display:none">
+      <div id="admin-list-types" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn btn-sm" onclick="expireAll()">🗑 Expire Old</button>
+        <button class="btn btn-sm" onclick="loadReports()">🚩 Reports</button>
+      </div>
+      <div id="pending-list"></div>
+    </div>
+
+    <!-- App Setting Section -->
+    <div id="admin-settings" style="display:none">
+      <h3 style="margin-bottom:12px">🔧 Settings</h3>
+      <div id="settings-fields"></div>
+      <button class="btn btn-primary btn-block" onclick="saveSettings()" style="margin-top:12px;padding:14px;font-size:1rem">💾 Save Settings</button>
+      <div id="settings-msg" class="form-msg"></div>
+    </div>
+
+    <!-- Payment Section -->
+    <div id="admin-payment" style="display:none">
+      <div class="tab-bar" id="payment-tabs" style="margin-bottom:12px">
+        <button class="tab-btn" data-sub="settings">💳 Payment</button>
+        <button class="tab-btn" data-sub="history">📋 History</button>
+      </div>
+      <div id="payment-settings">
+        <div id="payment-settings-fields"></div>
+        <button class="btn btn-primary btn-block" onclick="savePaymentSettings()" style="margin-top:12px;padding:14px;font-size:1rem">💾 Save Payment Settings</button>
+        <div id="payment-settings-msg" class="form-msg"></div>
+      </div>
+      <div id="payment-history" style="display:none">
+        <div id="payment-log"></div>
+      </div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="admin-dashboard" style="display:none">
+      <div id="dashboard-stats"></div>
+    </div>
+
+    <!-- Users Section -->
+    <div id="admin-users" style="display:none">
+      <div id="users-list"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== LISTING TYPE VIEWS (accessed from categories) ===== -->
+<section id="view-services" class="view">
+  <div class="container"><div class="view-header"><button class="back-btn" onclick="showView('home')">←</button><h2>👷 Services</h2></div><div id="svc-list"></div></div>
+</section>
+<section id="view-shops" class="view">
+  <div class="container"><div class="view-header"><button class="back-btn" onclick="showView('home')">←</button><h2>🏪 Shops</h2></div><div id="shop-list"></div></div>
+</section>
+<section id="view-properties" class="view">
+  <div class="container"><div class="view-header"><button class="back-btn" onclick="showView('home')">←</button><h2>🏠 Properties</h2></div><div id="prop-list"></div></div>
+</section>
+<section id="view-product-shops" class="view">
+  <div class="container"><div class="view-header"><button class="back-btn" onclick="showView('home')">←</button><h2>🏪 Shops & Utilities</h2></div><div id="ps-list"></div></div>
+</section>
+<section id="view-used-saman" class="view">
+  <div class="container"><div class="view-header"><button class="back-btn" onclick="showView('home')">←</button><h2>📦 Used Saman</h2></div><div id="used-list"></div></div>
+</section>
+
+<!-- ===== ADD FORMS ===== -->
+<section id="view-add-service" class="view"><div class="container form-container">
+  <div class="view-header"><button class="back-btn" onclick="showView('add')">←</button><h2>Add Service</h2></div>
+  <form onsubmit="addListing('services',this,event)">
+      <input type="hidden" name="owner_id" class="f-owner">
+      <input type="hidden" name="lat" class="f-lat">
+      <input type="hidden" name="lng" class="f-lng">
+      <label>Provider Name *</label><input type="text" name="provider_name" class="cap" required>
+      <label>Category *</label><select name="category_id" id="as-cat" required></select>
+      <label>Experience (Years)</label><input type="number" name="experience_years" min="0">
+      <label>Availability</label>
+      <select name="availability" id="as-avail" onchange="document.getElementById('as-busy-until').style.display=this.value==='busy'?'block':'none'">
+        <option value="available">Available</option>
+        <option value="busy">Busy</option>
+      </select>
+      <div id="as-busy-until" style="display:none">
+        <label>Busy Until</label><input type="date" name="busy_until">
+      </div>
+      <label>Description</label><textarea name="description" rows="2"></textarea>
+      <label>Area *</label><input type="text" name="area" class="cap" required>
+      <label>City *</label><input type="text" name="city" class="cap" required>
+      <label>Mobile *</label><input type="tel" name="mobile" required>
+    <label>WhatsApp</label><input type="tel" name="whatsapp">
+    <label>Photos (optional)</label><input type="file" accept="image/*" multiple class="photo-input">
+    <div class="photo-previews"></div>
+    <button type="submit" class="btn btn-primary btn-block">Submit</button>
+  </form>
+</div></section>
+
+<section id="view-add-shop" class="view"><div class="container form-container">
+  <div class="view-header"><button class="back-btn" onclick="showView('add')">←</button><h2>Add Commercial Shop</h2></div>
+  <form onsubmit="addListing('shops',this,event)">
+    <input type="hidden" name="owner_id" class="f-owner">
+    <input type="hidden" name="lat" class="f-lat">
+    <input type="hidden" name="lng" class="f-lng">
+    <label>Title *</label><input type="text" name="title" class="cap" required>
+    <input type="hidden" name="type" value="rent" id="shop-type">
+    <label id="shop-price-label">Monthly Rent (PKR)*</label><input type="number" name="price" min="1" required>
+    <label>Description</label><textarea name="description" rows="2"></textarea>
+    <label>Size (sqft)</label><input type="number" name="size_sqft" min="1">
+    <label>Floor</label><select name="floor"><option value="">Select</option><option>Ground</option><option>1st</option><option>2nd</option><option>Basement</option><option>Other</option></select>
+    <label><input type="checkbox" name="corner_shop" value="1"> Corner</label>
+    <label><input type="checkbox" name="parking" value="1"> Parking</label>
+    <label>Area *</label><input type="text" name="area" class="cap" required>
+    <label>City *</label><input type="text" name="city" class="cap" required>
+    <label>Mobile *</label><input type="tel" name="mobile" required>
+    <label>WhatsApp</label><input type="tel" name="whatsapp">
+    <label>Photos (min 3, max 6)</label><input type="file" accept="image/*" multiple class="photo-input">
+    <div class="photo-previews"></div>
+    <button type="submit" class="btn btn-primary btn-block">Submit</button>
+  </form>
+</div></section>
+
+<section id="view-add-property" class="view"><div class="container form-container">
+  <div class="view-header"><button class="back-btn" onclick="showView('add')">←</button><h2>Add Property</h2></div>
+  <form onsubmit="addListing('properties',this,event)">
+    <input type="hidden" name="owner_id" class="f-owner">
+    <input type="hidden" name="lat" class="f-lat">
+    <input type="hidden" name="lng" class="f-lng">
+    <label>Title *</label><input type="text" name="title" class="cap" required>
+    <label>Property Type *</label><select name="property_type" required><option value="house">House</option><option value="apartment">Apartment</option></select>
+    <input type="hidden" name="listing_type" value="rent" id="prop-listing-type">
+    <label id="prop-price-label">Monthly Rent (PKR)*</label><input type="number" name="price" min="1" required>
+    <label>Description</label><textarea name="description" rows="2"></textarea>
+    <label>Size (sqft)</label><input type="number" name="size_sqft" min="1">
+    <label>Size (marla)</label><input type="number" name="size_marla" step="0.1" min="0.1">
+    <label>Bedrooms *</label><input type="number" name="bedrooms" value="1" min="1" required>
+    <label>Bathrooms *</label><input type="number" name="bathrooms" value="1" min="1" required>
+    <label>Floor</label><input type="number" name="floor_number" value="0" min="0">
+    <label>Total Floors</label><input type="number" name="total_floors" min="1">
+    <label>Furnished</label><select name="furnished"><option value="unfurnished">No</option><option value="semi-furnished">Semi</option><option value="furnished">Yes</option></select>
+    <label><input type="checkbox" name="corner" value="1"> Corner</label>
+    <label><input type="checkbox" name="parking" value="1"> Parking</label>
+    <label>Area *</label><input type="text" name="area" class="cap" required>
+    <label>City *</label><input type="text" name="city" class="cap" required>
+    <label>Mobile *</label><input type="tel" name="mobile" required>
+    <label>WhatsApp</label><input type="tel" name="whatsapp">
+    <label>Photos (min 3, max 6)</label><input type="file" accept="image/*" multiple class="photo-input">
+    <div class="photo-previews"></div>
+    <button type="submit" class="btn btn-primary btn-block">Submit</button>
+  </form>
+</div></section>
+
+<section id="view-add-product-shop" class="view"><div class="container form-container">
+  <div class="view-header"><button class="back-btn" onclick="showView('add')">←</button><h2>Add Shop / Utility Point</h2></div>
+  <form onsubmit="addListing('product_shops',this,event)">
+    <input type="hidden" name="owner_id" class="f-owner">
+    <input type="hidden" name="lat" class="f-lat">
+    <input type="hidden" name="lng" class="f-lng">
+    <label>Shop Name *</label><input type="text" name="shop_name" class="cap" required>
+    <label>Category *</label><select name="category_id" id="aps-cat" required></select>
+    <label>Description</label><textarea name="description" rows="2"></textarea>
+    <label>Opening Time</label>
+    <div style="display:flex;gap:6px">
+      <select name="opening_hour" style="flex:2;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:.95rem">
+        <option value="">HH</option>
+        <option value="01">1</option><option value="02">2</option><option value="03">3</option><option value="04">4</option>
+        <option value="05">5</option><option value="06">6</option><option value="07">7</option><option value="08">8</option>
+        <option value="09">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+      </select>
+      <select name="opening_min" style="flex:2;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:.95rem">
+        <option value="">MM</option>
+        <option value="00">00</option><option value="10">10</option><option value="20">20</option><option value="30">30</option>
+        <option value="40">40</option><option value="50">50</option>
+      </select>
+      <select name="opening_ampm" style="flex:1;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:.95rem">
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+    </div>
+    <label>Closing Time</label>
+    <div style="display:flex;gap:6px">
+      <select name="closing_hour" style="flex:2;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:.95rem">
+        <option value="">HH</option>
+        <option value="01">1</option><option value="02">2</option><option value="03">3</option><option value="04">4</option>
+        <option value="05">5</option><option value="06">6</option><option value="07">7</option><option value="08">8</option>
+        <option value="09">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+      </select>
+      <select name="closing_min" style="flex:2;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:.95rem">
+        <option value="">MM</option>
+        <option value="00">00</option><option value="10">10</option><option value="20">20</option><option value="30">30</option>
+        <option value="40">40</option><option value="50">50</option>
+      </select>
+      <select name="closing_ampm" style="flex:1;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:.95rem">
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+    </div>
+    <label>Weekly Off</label>
+    <input type="hidden" name="weekly_off_day" id="wo-combined">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <select id="wo-day" style="flex:1;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:.95rem">
+        <option value="">-- Select Day --</option>
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+        <option value="Saturday">Saturday</option>
+        <option value="Sunday">Sunday</option>
+      </select>
+      <select id="wo-type" style="flex:1;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:.95rem;display:none">
+        <option value="">-- Type --</option>
+        <option value="full">Full Day Off</option>
+        <option value="1st">1st Half Off</option>
+        <option value="2nd">2nd Half Off</option>
+      </select>
+    </div>
+    <div id="half-timing" style="display:none;margin-top:8px;padding:14px;background:#f8f8f8;border-radius:10px;border:1px solid #eee">
+      <div class="timing-row" id="timing-row-2nd" style="display:none">
+        <label style="font-size:.85rem;font-weight:600;margin-bottom:6px">2nd Half Open Time</label>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <select name="h2o_hour" style="flex:2;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="">HH</option>
+            <option value="01">1</option><option value="02">2</option><option value="03">3</option><option value="04">4</option>
+            <option value="05">5</option><option value="06">6</option><option value="07">7</option><option value="08">8</option>
+            <option value="09">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          </select>
+          <select name="h2o_min" style="flex:2;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="">MM</option>
+            <option value="00">00</option><option value="10">10</option><option value="20">20</option><option value="30">30</option>
+            <option value="40">40</option><option value="50">50</option>
+          </select>
+          <select name="h2o_ampm" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="AM">AM</option><option value="PM">PM</option>
+          </select>
+        </div>
+        <label style="font-size:.85rem;font-weight:600;margin-bottom:6px">2nd Half Close Time</label>
+        <div style="display:flex;gap:6px">
+          <select name="h2c_hour" style="flex:2;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="">HH</option>
+            <option value="01">1</option><option value="02">2</option><option value="03">3</option><option value="04">4</option>
+            <option value="05">5</option><option value="06">6</option><option value="07">7</option><option value="08">8</option>
+            <option value="09">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          </select>
+          <select name="h2c_min" style="flex:2;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="">MM</option>
+            <option value="00">00</option><option value="10">10</option><option value="20">20</option><option value="30">30</option>
+            <option value="40">40</option><option value="50">50</option>
+          </select>
+          <select name="h2c_ampm" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="AM">AM</option><option value="PM">PM</option>
+          </select>
+        </div>
+      </div>
+      <div class="timing-row" id="timing-row-1st" style="display:none">
+        <label style="font-size:.85rem;font-weight:600;margin-bottom:6px">1st Half Open Time</label>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <select name="h1o_hour" style="flex:2;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="">HH</option>
+            <option value="01">1</option><option value="02">2</option><option value="03">3</option><option value="04">4</option>
+            <option value="05">5</option><option value="06">6</option><option value="07">7</option><option value="08">8</option>
+            <option value="09">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          </select>
+          <select name="h1o_min" style="flex:2;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="">MM</option>
+            <option value="00">00</option><option value="10">10</option><option value="20">20</option><option value="30">30</option>
+            <option value="40">40</option><option value="50">50</option>
+          </select>
+          <select name="h1o_ampm" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="AM">AM</option><option value="PM">PM</option>
+          </select>
+        </div>
+        <label style="font-size:.85rem;font-weight:600;margin-bottom:6px">1st Half Close Time</label>
+        <div style="display:flex;gap:6px">
+          <select name="h1c_hour" style="flex:2;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="">HH</option>
+            <option value="01">1</option><option value="02">2</option><option value="03">3</option><option value="04">4</option>
+            <option value="05">5</option><option value="06">6</option><option value="07">7</option><option value="08">8</option>
+            <option value="09">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          </select>
+          <select name="h1c_min" style="flex:2;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="">MM</option>
+            <option value="00">00</option><option value="10">10</option><option value="20">20</option><option value="30">30</option>
+            <option value="40">40</option><option value="50">50</option>
+          </select>
+          <select name="h1c_ampm" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:.9rem">
+            <option value="AM">AM</option><option value="PM">PM</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.getElementById('wo-day').addEventListener('change', function() {
+        const t = document.getElementById('wo-type');
+        t.style.display = this.value ? 'block' : 'none';
+        if (!this.value) { t.value = ''; document.getElementById('half-timing').style.display = 'none'; }
+        updateWoCombined();
+      });
+      document.getElementById('wo-type').addEventListener('change', function() {
+        const half = document.getElementById('half-timing');
+        if (this.value === '1st') {
+          half.style.display = 'block';
+          document.getElementById('timing-row-1st').style.display = 'none';
+          document.getElementById('timing-row-2nd').style.display = 'block';
+        } else if (this.value === '2nd') {
+          half.style.display = 'block';
+          document.getElementById('timing-row-1st').style.display = 'block';
+          document.getElementById('timing-row-2nd').style.display = 'none';
+        } else {
+          half.style.display = 'none';
+        }
+        updateWoCombined();
+      });
+      function updateWoCombined() {
+        const day = document.getElementById('wo-day').value;
+        const type = document.getElementById('wo-type').value;
+        document.getElementById('wo-combined').value = day && type ? (type === 'full' ? day : day + '_' + type) : day || '';
+      }
+    </script>
+    <label>Area *</label><input type="text" name="area" class="cap" required>
+    <label>City *</label><input type="text" name="city" class="cap" required>
+    <label>Mobile *</label><input type="tel" name="mobile" required>
+    <label>WhatsApp</label><input type="tel" name="whatsapp">
+    <label>Photos (optional, max 6)</label><input type="file" accept="image/*" multiple class="photo-input">
+    <div class="photo-previews"></div>
+    <button type="submit" class="btn btn-primary btn-block" style="padding:16px;font-size:1.05rem;margin-top:16px">Submit Listing</button>
+  </form>
+</div></section>
+
+<section id="view-add-used-saman" class="view"><div class="container form-container">
+  <div class="view-header"><button class="back-btn" onclick="showView('add')">←</button><h2>Add Used Saman</h2></div>
+  <form onsubmit="addListing('used_saman',this,event)">
+    <input type="hidden" name="owner_id" class="f-owner">
+    <input type="hidden" name="lat" class="f-lat">
+    <input type="hidden" name="lng" class="f-lng">
+    <label>Title *</label><input type="text" name="title" class="cap" required>
+    <label>Category *</label><select name="category_id" id="aus-cat" required></select>
+    <label>Condition *</label><select name="condition" required><option value="new_jesa">New Jesa</option><option value="acha">Acha</option><option value="theek_thak">Theek Thak</option></select>
+    <label>Price (PKR)*</label><input type="number" name="price" min="1" required>
+    <label>Description</label><textarea name="description" rows="2"></textarea>
+    <label>Area *</label><input type="text" name="area" class="cap" required>
+    <label>City *</label><input type="text" name="city" class="cap" required>
+    <label>Mobile *</label><input type="tel" name="mobile" required>
+    <label>WhatsApp</label><input type="tel" name="whatsapp">
+    <label>Photos (min 3, max 6)</label><input type="file" accept="image/*" multiple class="photo-input">
+    <div class="photo-previews"></div>
+    <button type="submit" class="btn btn-primary btn-block">Submit</button>
+  </form>
+</div></section>
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <a href="#" class="nav-item active" data-view="home" onclick="showView('home')"><i data-lucide="home"></i><span>Home</span></a>
+  <a href="#" class="nav-item" data-view="my" onclick="showView('my')"><i data-lucide="clipboard-list"></i><span>My Ads</span></a>
+  <a href="#" class="nav-item add-btn" data-view="add" onclick="showView('add')"><i data-lucide="plus-circle"></i><span>Add</span></a>
+  <a href="#" class="nav-item" data-view="search" onclick="showView('search')"><i data-lucide="search"></i><span>Search</span></a>
+  <a href="#" class="nav-item" data-view="account" onclick="showView('account')"><i data-lucide="user"></i><span>Account</span></a>
+</nav>
+
+<!-- CONFIRMATION DIALOG -->
+<div id="confirm-overlay" class="confirm-overlay" onclick="closeConfirm(event)">
+  <div class="confirm-dialog" onclick="event.stopPropagation()">
+    <div id="confirm-msg"></div>
+    <button class="btn btn-primary" onclick="closeConfirm()" id="confirm-ok">OK</button>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div id="modal" class="modal-overlay" onclick="closeModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <span class="modal-close" onclick="closeModal()">&times;</span>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- PHOTO VIEWER -->
+<div id="photo-viewer" class="photo-viewer" onclick="if(event.target===this)closePhotoViewer()">
+  <span class="pv-close" onclick="closePhotoViewer()">&times;</span>
+  <span class="pv-nav pv-prev" onclick="event.stopPropagation();pvChange(-1)">&#10094;</span>
+  <img id="pv-img" class="pv-img" src="" onclick="event.stopPropagation()">
+  <span class="pv-nav pv-next" onclick="event.stopPropagation();pvChange(1)">&#10095;</span>
+  <div id="pv-counter" class="pv-counter"></div>
+</div>
+
+  <script src="supabase.min.js"></script>
+  <script src="app.js?v=3"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker registered', reg))
+          .catch(err => console.error('Service Worker registration failed', err));
+      }
+    });
+  </script>
+</body>
+</html>
